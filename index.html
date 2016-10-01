@@ -4,13 +4,17 @@
         JavaScript lexical analyzer
     </title>
     <link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div class="row">
+        <div class="row top-buffer">
+            <input id="file" name="file" type="file">
+        </div>
+        <div class="row top-buffer">
             List of chars
         </div>
-        <div class="row">
+        <div class="row top-buffer">
             <div class="col-md-3">
                 <table class="table table-striped">
                     <thead>
@@ -77,5 +81,6 @@
             </div>
         </div>
     </div>
+    <script src="public/main.js"></script>
 </body>
 </html>
