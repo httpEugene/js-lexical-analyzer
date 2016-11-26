@@ -89,6 +89,7 @@
                 }
             }
             showLexemsTable(lexems);
+            showInformationTables();
         };
         reader.readAsText(file);
     };
@@ -100,7 +101,9 @@
             return SYMBOL_TYPE.DELIMITER;
         } else if (symbol.charCodeAt(0) > 47 && symbol.charCodeAt(0) < 58) {
             return SYMBOL_TYPE.CONSTANT;
-        } else {
+        } else if (
+            (symbol.charCodeAt(0) > 64 && symbol.charCodeAt(0) < 91)
+            || (symbol.charCodeAt(0) > 96 && symbol.charCodeAt(0) < 123)) {
             return SYMBOL_TYPE.IDENTIFICATOR_OR_KEYWORD;
         }    
     }
@@ -110,14 +113,14 @@
     }
 
     function getIdForNewTableItem(table) {
-        const keys = Object.keys(table);
-        const lastKey = keys[keys.length-1];
+        const values = Object.keys(table).map(key => table[key]);
 
-        return table[lastKey] + 1;
+        return Math.max(...values) + 1;
     }
 
     function showLexemsTable(array) {
         const table = document.getElementById('lexems');
+        
         for (let i = 0; i < array.length; i++) {
             const row = document.createElement('th');
             row.textContent = array[i];
@@ -128,7 +131,32 @@
     function showProgramSourceCode(code) {
         const div = document.getElementById('source_code');
         const pre = document.createElement('pre');
+        
         pre.textContent = code;
         div.appendChild(pre);
+    }
+
+    function showInformationTables() {
+        showInformationTable('keywords', KEYWORDS);
+        showInformationTable('identificators', IDENTIFICATORS);
+        showInformationTable('constants', CONSTANTS);
+        showInformationTable('delimiters', DELIMITERS);
+    }
+
+    function showInformationTable(tableId, tableData) {
+        const table = document.getElementById(tableId);
+        
+        Object.keys(tableData).forEach((key) => {
+            const tr = document.createElement('tr');
+            const th = document.createElement('th');
+            const td = document.createElement('td');
+
+            th.textContent = tableData[key];
+            td.textContent = key;
+            
+            tr.appendChild(th);
+            tr.appendChild(td);
+            table.appendChild(tr);
+        });
     }
 })();
