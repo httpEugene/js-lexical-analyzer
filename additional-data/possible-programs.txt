@@ -1,0 +1,9 @@
+PROGRAM empty; 
+BEGIN END.
+
+---------------------
+PROGRAM empty; 
+PROCEDURE myprocedure();
+
+LABEL 13426, 7883, 2987;
+BEGIN END;
