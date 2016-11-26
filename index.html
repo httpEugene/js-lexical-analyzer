@@ -11,8 +11,14 @@
         <div class="row top-buffer">
             <input id="file" name="file" type="file">
         </div>
+        <div class="row" id="source_code"></div>
         <div class="row top-buffer">
-            List of chars
+            <table class="table table-bordered">
+                <thead>
+                    <tr id="lexems">
+                    </tr>
+                </thead>
+            </table>
         </div>
         <div class="row top-buffer">
             <div class="col-md-3">
@@ -23,11 +29,7 @@
                             <th>Keywords</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>var</td>
-                        </tr>
+                    <tbody id="keywords">
                     </tbody>
                 </table>
             </div>
@@ -39,11 +41,7 @@
                             <th>Identificators</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>mySpecialVar</td>
-                        </tr>
+                    <tbody id="identificators">
                     </tbody>
                 </table>
             </div>
@@ -55,11 +53,7 @@
                             <th>Constants</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>PI</td>
-                        </tr>
+                    <tbody id="constants">
                     </tbody>
                 </table>
             </div>
@@ -68,14 +62,10 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Dividers</th>
+                            <th>DELIMITERS</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>:</td>
-                        </tr>
+                    <tbody id="delimiters">
                     </tbody>
                 </table>
             </div>
