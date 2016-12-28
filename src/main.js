@@ -50,7 +50,7 @@
         reader.onload = function(event) {
             const programChars = Array.from(event.target.result);
             for(var i = 0; i < programChars.length; i++) {
-                switch(symbolType(programChars[i])) {
+                switch(symbolType(programChars[i], programChars[i - 1])) {
                     case SYMBOL_TYPE.WHITESPACE:
                         currentLexem = '';
                         break;
@@ -89,13 +89,13 @@
                         currentLexem = '';
                         if (DELIMITERS[programChars[i]] === DELIMITERS['('] 
                             && DELIMITERS[programChars[i+1]] === DELIMITERS['*']) {
+                            addSymbolOnView(programChars[i], false, true);
                             commentStart = true;
-                        } else if (DELIMITERS[programChars[i]] === DELIMITERS['*'] 
-                                   && DELIMITERS[programChars[i+1]] === DELIMITERS[')']) {
+                        } else if (commentStart && isCommentFinished(programChars[i], programChars[i - 1])) {
+                            addSymbolOnView(programChars[i], false, true);
                             commentStart = false;
-                        } else if ((DELIMITERS[programChars[i]] === DELIMITERS[')'] 
-                                    && DELIMITERS[programChars[i-1]] !== DELIMITERS['*'])
-                                    || DELIMITERS[programChars[i]] !== DELIMITERS[')'] ) {
+                        } else {
+                            addSymbolOnView(programChars[i]);
                             lexems.push(DELIMITERS[programChars[i]]);
                         }
                         
@@ -109,8 +109,8 @@
         reader.readAsText(file);
     };
 
-    function symbolType(symbol) {
-        if (commentStart) {
+    function symbolType(symbol, prevSymbol) {
+        if (commentStart && !isCommentFinished(symbol, prevSymbol)) {
             addSymbolOnView(symbol, false, true);
             return;
         }
@@ -126,12 +126,16 @@
             addSymbolOnView(symbol);
             return SYMBOL_TYPE.WHITESPACE;
         } else if (DELIMITERS[symbol]) {
-            addSymbolOnView(symbol);
             return SYMBOL_TYPE.DELIMITER;
         } else {
             addSymbolOnView(symbol, true);
             return;
         } 
+    }
+
+    function isCommentFinished(symbol, prevSymbol) {
+        return DELIMITERS[prevSymbol] === DELIMITERS['*']
+               && DELIMITERS[symbol] === DELIMITERS[')'];
     }
 
     function isDelimeterOrWhitespace(symbol) {
