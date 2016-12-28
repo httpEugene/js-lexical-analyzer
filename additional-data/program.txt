@@ -1,5 +1,4 @@
-PROGRAM myprog; 
-PROCEDURE myprocedure ();
-
-LABEL 13426, 7883, 2987;
+PROCEDURE myprocedure();
+#
+LABEL 1342$6, 7883, (*2987*);
 BEGIN END;

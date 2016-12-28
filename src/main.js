@@ -25,7 +25,8 @@
         ';': ';'.charCodeAt(0),
         ',': ','.charCodeAt(0),
         '(': '('.charCodeAt(0),
-        ')': ')'.charCodeAt(0)
+        ')': ')'.charCodeAt(0),
+        '*': '*'.charCodeAt(0)
     };
 
     const WHITESPACES = {
@@ -36,6 +37,9 @@
         [String.fromCharCode(13)]: 13,
         [String.fromCharCode(32)]: 32
     };
+    const div = document.getElementById('source_code');
+    const pre = document.createElement('pre');
+    let commentStart = false;
 
     document.getElementById('file').onchange = function() {
         const [file] = this.files;
@@ -45,7 +49,6 @@
 
         reader.onload = function(event) {
             const programChars = Array.from(event.target.result);
-            showProgramSourceCode(event.target.result);
             for(var i = 0; i < programChars.length; i++) {
                 switch(symbolType(programChars[i])) {
                     case SYMBOL_TYPE.WHITESPACE:
@@ -84,28 +87,51 @@
 
                     case SYMBOL_TYPE.DELIMITER:
                         currentLexem = '';
-                        lexems.push(DELIMITERS[programChars[i]]);
+                        if (DELIMITERS[programChars[i]] === DELIMITERS['('] 
+                            && DELIMITERS[programChars[i+1]] === DELIMITERS['*']) {
+                            commentStart = true;
+                        } else if (DELIMITERS[programChars[i]] === DELIMITERS['*'] 
+                                   && DELIMITERS[programChars[i+1]] === DELIMITERS[')']) {
+                            commentStart = false;
+                        } else if ((DELIMITERS[programChars[i]] === DELIMITERS[')'] 
+                                    && DELIMITERS[programChars[i-1]] !== DELIMITERS['*'])
+                                    || DELIMITERS[programChars[i]] !== DELIMITERS[')'] ) {
+                            lexems.push(DELIMITERS[programChars[i]]);
+                        }
+                        
                         break;
                 }
             }
             showLexemsTable(lexems);
             showInformationTables();
+            div.appendChild(pre);
         };
         reader.readAsText(file);
     };
 
     function symbolType(symbol) {
-        if (WHITESPACES[symbol]) {
+        if (commentStart) {
+            addSymbolOnView(symbol, false, true);
+            return;
+        }
+
+        if ((symbol.charCodeAt(0) > 64 && symbol.charCodeAt(0) < 91)
+            || (symbol.charCodeAt(0) > 96 && symbol.charCodeAt(0) < 123)) {
+            addSymbolOnView(symbol);
+            return SYMBOL_TYPE.IDENTIFICATOR_OR_KEYWORD;
+        } else if (symbol.charCodeAt(0) > 47 && symbol.charCodeAt(0) < 58) {
+            addSymbolOnView(symbol);
+            return SYMBOL_TYPE.CONSTANT;
+        } else if (WHITESPACES[symbol]) {
+            addSymbolOnView(symbol);
             return SYMBOL_TYPE.WHITESPACE;
         } else if (DELIMITERS[symbol]) {
+            addSymbolOnView(symbol);
             return SYMBOL_TYPE.DELIMITER;
-        } else if (symbol.charCodeAt(0) > 47 && symbol.charCodeAt(0) < 58) {
-            return SYMBOL_TYPE.CONSTANT;
-        } else if (
-            (symbol.charCodeAt(0) > 64 && symbol.charCodeAt(0) < 91)
-            || (symbol.charCodeAt(0) > 96 && symbol.charCodeAt(0) < 123)) {
-            return SYMBOL_TYPE.IDENTIFICATOR_OR_KEYWORD;
-        }    
+        } else {
+            addSymbolOnView(symbol, true);
+            return;
+        } 
     }
 
     function isDelimeterOrWhitespace(symbol) {
@@ -128,12 +154,14 @@
         }
     }
 
-    function showProgramSourceCode(code) {
-        const div = document.getElementById('source_code');
-        const pre = document.createElement('pre');
-        
-        pre.textContent = code;
-        div.appendChild(pre);
+    function addSymbolOnView(symbol, error, comment) {
+        if (!error && !comment) {
+            pre.innerHTML += symbol;
+        } else if (comment) {
+            pre.innerHTML += `<span style="color: green">${symbol}</span>`;
+        } else {
+            pre.innerHTML += `<span style="color: red">${symbol}"Unknown symbol"</span>`;
+        }
     }
 
     function showInformationTables() {
