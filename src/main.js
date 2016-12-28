@@ -40,11 +40,17 @@
     const div = document.getElementById('source_code');
     const pre = document.createElement('pre');
     let commentStart = false;
+    let currentLine = 0;
+    let currentLexemEndIndex = 0;
+    let lexems = []; {
+
+    }
+    let startConstantIndex = null;
+    let startKeywordOrIdentifireIndex = null;
 
     document.getElementById('file').onchange = function() {
         const [file] = this.files;
         const reader = new FileReader();
-        let lexems = [];
         let currentLexem = '';
 
         reader.onload = function(event) {
@@ -53,40 +59,63 @@
                 switch(symbolType(programChars[i], programChars[i - 1])) {
                     case SYMBOL_TYPE.WHITESPACE:
                         currentLexem = '';
+                        startConstantIndex = null;
+                        startKeywordOrIdentifireIndex = null;
+                        if (programChars[i] === String.fromCharCode(10)) {
+                            currentLine++;
+                            currentLexemEndIndex = 0;
+                        } else {
+                            currentLexemEndIndex++;
+                        }
                         break;
 
                     case SYMBOL_TYPE.IDENTIFICATOR_OR_KEYWORD:
+                        if (startKeywordOrIdentifireIndex === null) {
+                            startKeywordOrIdentifireIndex = currentLexemEndIndex;
+                        }
                         if (currentLexem && isDelimeterOrWhitespace(programChars[i + 1])) {
                             currentLexem += programChars[i];
                             if (IDENTIFICATORS[currentLexem]) {
-                                lexems.push(IDENTIFICATORS[currentLexem]);
+                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex);
+                                startKeywordOrIdentifireIndex = null;
                             } else if (KEYWORDS[currentLexem]) {
-                                lexems.push(KEYWORDS[currentLexem]);
+                                addNewLexem(KEYWORDS[currentLexem], startKeywordOrIdentifireIndex);
+                                startKeywordOrIdentifireIndex = null;
                             } else {
                                 IDENTIFICATORS[currentLexem] = getIdForNewTableItem(IDENTIFICATORS);
-                                lexems.push(IDENTIFICATORS[currentLexem]);
+                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex);
+                                startKeywordOrIdentifireIndex = null;
                             }
                         } else {
                             currentLexem += programChars[i];
                         }
+                        currentLexemEndIndex++;
                         break;
 
                     case SYMBOL_TYPE.CONSTANT:
+                        if (startConstantIndex === null) {
+                            startConstantIndex = currentLexemEndIndex;
+                        }
                         if (currentLexem && isDelimeterOrWhitespace(programChars[i + 1])) {
                             currentLexem += programChars[i];
                             if (CONSTANTS[currentLexem]) {
-                                lexems.push(CONSTANTS[currentLexem]);
+                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
+                                startConstantIndex = null;
                             } else {
                                 CONSTANTS[currentLexem] = getIdForNewTableItem(CONSTANTS);
-                                lexems.push(CONSTANTS[currentLexem]);
+                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
+                                startConstantIndex = null;
                             }
                         } else {
                             currentLexem += programChars[i];
                         }
+                        currentLexemEndIndex++;
                         break;
 
                     case SYMBOL_TYPE.DELIMITER:
                         currentLexem = '';
+                        startConstantIndex = null;
+                        startKeywordOrIdentifireIndex = null;
                         if (DELIMITERS[programChars[i]] === DELIMITERS['('] 
                             && DELIMITERS[programChars[i+1]] === DELIMITERS['*']) {
                             addSymbolOnView(programChars[i], false, true);
@@ -96,9 +125,9 @@
                             commentStart = false;
                         } else {
                             addSymbolOnView(programChars[i]);
-                            lexems.push(DELIMITERS[programChars[i]]);
+                            addNewLexem(DELIMITERS[programChars[i]]);
                         }
-                        
+                        currentLexemEndIndex++;
                         break;
                 }
             }
@@ -149,12 +178,18 @@
     }
 
     function showLexemsTable(array) {
-        const table = document.getElementById('lexems');
+        const lexems = document.getElementById('lexems');
+        const lexemsPositions = document.getElementById('lexemsPositions');
         
         for (let i = 0; i < array.length; i++) {
-            const row = document.createElement('th');
-            row.textContent = array[i];
-            table.appendChild(row);
+            const lexemsRow = document.createElement('th');
+            const positionsRow = document.createElement('th');
+            lexemsRow.textContent = array[i].lexem;
+            positionsRow.textContent = array[i].startIndex || array[i].startIndex === 0
+                ? `${array[i].line} : ${array[i].startIndex}-${array[i].endIndex}`
+                : `${array[i].line} : ${array[i].endIndex}`;
+            lexems.appendChild(lexemsRow);
+            lexemsPositions.appendChild(positionsRow);
         }
     }
 
@@ -189,6 +224,15 @@
             tr.appendChild(th);
             tr.appendChild(td);
             table.appendChild(tr);
+        });
+    }
+
+    function addNewLexem(lexem, currentLexemStartIndex) {
+        lexems.push({
+            lexem,
+            line: currentLine,
+            startIndex: currentLexemStartIndex,
+            endIndex: currentLexemEndIndex
         });
     }
 })();
