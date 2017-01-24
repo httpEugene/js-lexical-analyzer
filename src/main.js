@@ -3,7 +3,8 @@
         WHITESPACE: 'WHITESPACE',
         IDENTIFICATOR_OR_KEYWORD: 'IDENTIFICATOR_OR_KEYWORD',
         DELIMITER: 'DELIMITER',
-        CONSTANT: 'CONSTANT'
+        CONSTANT: 'CONSTANT',
+        CALCULATION: 'CALCULATION'
     }
 
     const KEYWORDS = {
@@ -26,7 +27,8 @@
         ',': ','.charCodeAt(0),
         '(': '('.charCodeAt(0),
         ')': ')'.charCodeAt(0),
-        '*': '*'.charCodeAt(0)
+        '*': '*'.charCodeAt(0),
+        '.': '.'.charCodeAt(0)
     };
 
     const WHITESPACES = {
@@ -37,14 +39,18 @@
         [String.fromCharCode(13)]: 13,
         [String.fromCharCode(32)]: 32
     };
+
+    const CALCULATION_SYMBOLS = {
+        '+': '+'.charCodeAt(0),
+        '-': '-'.charCodeAt(0),
+    };
+
     const div = document.getElementById('source_code');
     const pre = document.createElement('pre');
     let commentStart = false;
     let currentLine = 0;
     let currentLexemEndIndex = 0;
-    let lexems = []; {
-
-    }
+    let lexems = []; 
     let startConstantIndex = null;
     let startKeywordOrIdentifireIndex = null;
 
@@ -101,7 +107,7 @@
                             if (CONSTANTS[currentLexem]) {
                                 addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
                                 startConstantIndex = null;
-                            } else {
+                            } else if (programChars[i + 1] !== '.') {
                                 CONSTANTS[currentLexem] = getIdForNewTableItem(CONSTANTS);
                                 addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
                                 startConstantIndex = null;
@@ -113,9 +119,17 @@
                         break;
 
                     case SYMBOL_TYPE.DELIMITER:
+                        if (DELIMITERS[programChars[i]] === DELIMITERS['.'] 
+                            && isConstantSymbol(programChars[i-1])
+                            && isConstantSymbol(programChars[i+1])) {
+                            currentLexem += programChars[i]; 
+                            addSymbolOnView(programChars[i]); 
+                            break;
+                        }
                         currentLexem = '';
                         startConstantIndex = null;
                         startKeywordOrIdentifireIndex = null;
+                          
                         if (DELIMITERS[programChars[i]] === DELIMITERS['('] 
                             && DELIMITERS[programChars[i+1]] === DELIMITERS['*']) {
                             addSymbolOnView(programChars[i], false, true);
@@ -128,6 +142,15 @@
                             addNewLexem(DELIMITERS[programChars[i]]);
                         }
                         currentLexemEndIndex++;
+                        break;
+                    case SYMBOL_TYPE.CALCULATION:
+                        if (startConstantIndex === null && isConstantSymbol(programChars[i+1])) {
+                            startConstantIndex = currentLexemEndIndex;
+                            currentLexem += programChars[i]; 
+                        } else {
+                            currentLexemEndIndex++;
+                        }          
+                        addSymbolOnView(programChars[i]);              
                         break;
                 }
             }
@@ -148,7 +171,7 @@
             || (symbol.charCodeAt(0) > 96 && symbol.charCodeAt(0) < 123)) {
             addSymbolOnView(symbol);
             return SYMBOL_TYPE.IDENTIFICATOR_OR_KEYWORD;
-        } else if (symbol.charCodeAt(0) > 47 && symbol.charCodeAt(0) < 58) {
+        } else if (isConstantSymbol(symbol)) {
             addSymbolOnView(symbol);
             return SYMBOL_TYPE.CONSTANT;
         } else if (WHITESPACES[symbol]) {
@@ -156,6 +179,8 @@
             return SYMBOL_TYPE.WHITESPACE;
         } else if (DELIMITERS[symbol]) {
             return SYMBOL_TYPE.DELIMITER;
+        } else if (CALCULATION_SYMBOLS[symbol]) {
+            return SYMBOL_TYPE.CALCULATION;
         } else {
             addSymbolOnView(symbol, true);
             return;
@@ -165,6 +190,10 @@
     function isCommentFinished(symbol, prevSymbol) {
         return DELIMITERS[prevSymbol] === DELIMITERS['*']
                && DELIMITERS[symbol] === DELIMITERS[')'];
+    }
+
+    function isConstantSymbol(symbol) {
+        return symbol.charCodeAt(0) > 47 && symbol.charCodeAt(0) < 58;
     }
 
     function isDelimeterOrWhitespace(symbol) {
@@ -234,5 +263,9 @@
             startIndex: currentLexemStartIndex,
             endIndex: currentLexemEndIndex
         });
+    }
+
+    function syntaxAnalyzer() {
+
     }
 })();
