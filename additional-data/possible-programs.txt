@@ -3,6 +3,11 @@ BEGIN END.
 
 ---------------------
 PROGRAM empty; 
+
+LABEL 13426, 7883, 2987;
+BEGIN END;
+
+---------------------
 PROCEDURE myprocedure();
 
 LABEL 13426, 7883, 2987;
