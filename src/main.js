@@ -147,7 +147,7 @@
                             commentStart = false;
                         } else {
                             addSymbolOnView(programChars[i]);
-                            addNewLexem(DELIMITERS[programChars[i]], LEXEM_TYPE.DELIMITER);
+                            addNewLexem(DELIMITERS[programChars[i]], undefined, LEXEM_TYPE.DELIMITER);
                         }
                         currentLexemEndIndex++;
                         break;
@@ -163,9 +163,9 @@
                 }
             }
             showLexemsTable(lexems);
-            syntaxAnalyzer();
             showInformationTables();
             div.appendChild(pre);
+            syntaxAnalyzer();
         };
         reader.readAsText(file);
     };
@@ -287,32 +287,19 @@
         }
 
         getNextLexem();
-        if (lexem.value !== KEYWORDS.PROCEDURE) {
-            console.log(`Program should start with ${KEYWORDS.PROCEDURE} keyword`);
-        } 
-        // else if (lexem.value !== KEYWORDS.PROGRAM) {
-        //     console.log(`Program should start with ${KEYWORDS.PROGRAM} keyword`);
-        // }
+        checkProcedureOrProgramFlow();
 
         getNextLexem();
-        if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
-            console.log(`Program or procedure should have a name`);
+        if (lexem.value === KEYWORDS.BEGIN) {
+            return checkBeginEndFlow();
+        } else if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
+            throw new Error('Identificator should be here');
         }
 
-        getNextLexem();
-        if (lexem.value !== '(') {
-            console.log(`Procedure needed to open (`);
-        }
+        checkConstantsOneByOne();
 
         getNextLexem();
-        if (lexem.value !== ')') {
-            console.log(`Procedure needed ) symbol`);
-        }
-
-        getNextLexem();
-        if (lexem.value !== ';') {
-            console.log(`Wrong punctuation`);
-        }
+        checkBeginEndFlow();
     }
 
     function getNextLexem() {
@@ -320,7 +307,82 @@
         index++;
 
         if (!lexem) {
-            console.log('Unexpected End of program');
+            throw new Error('Unexpected End of program');
+        }
+    }
+
+    function checkProcedureOrProgramFlow() {
+        if (lexem.value === KEYWORDS.PROCEDURE) {
+            checkProcedureFlow();
+        } else if (lexem.value === KEYWORDS.PROGRAM) {
+            checkProgramFlow();
+        } else {
+            throw new Error(`Program should start with ${KEYWORDS.PROCEDURE} or ${KEYWORDS.PROGRAM} keyword`);
+        }
+    }
+
+    function checkProcedureFlow() {
+        checkIdentificatorExistance();
+
+        getNextLexem();
+        if (lexem.value !== DELIMITERS['(']) {
+            throw new Error('There should be \'(\' after identificator');
+        }
+
+        getNextLexem();
+        if (lexem.value !== DELIMITERS[')']) {
+            throw new Error('There should be closed method symbol \')\'');
+        }
+
+        checkSemiColumnExistance();
+    }
+
+    function checkProgramFlow() {
+        checkIdentificatorExistance();
+        checkSemiColumnExistance();
+    }
+
+    function checkIdentificatorExistance() {
+        getNextLexem();
+        if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
+            throw new Error('Identificator should be here');
+        }
+    }
+
+    function checkSemiColumnExistance() {
+        getNextLexem();
+        if (lexem.value !== DELIMITERS[';']) {
+            throw new Error('There should be \';\'');
+        }
+    }
+
+    function checkConstantsOneByOne() {
+        getNextLexem();
+        if (lexem.type !== LEXEM_TYPE.CONSTANT) {
+            throw new Error('Constant should be here');
+        }
+        
+        getNextLexem();
+        if (lexem.value === DELIMITERS[',']) {
+            checkConstantsOneByOne();
+        } else if (lexem.value !== DELIMITERS[';']) {
+            throw new Error('Semi column or comma should be here');
+        }
+    }
+
+    function checkBeginEndFlow() {
+        if (lexem.value !== KEYWORDS.BEGIN) {
+            throw new Error('\'BEGIN\' keyword should be here');
+        }
+
+        getNextLexem();
+        if (lexem.value !== KEYWORDS.END) {
+            throw new Error('\'END\' keyword should be here');
+        }
+
+        getNextLexem();
+        if (lexem.value !== DELIMITERS[';']) {
+            throw new Error('Semi column should be here');
         }
     }
 })();

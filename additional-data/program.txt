@@ -1,7 +1,7 @@
-PROCEDURE myprocedure;
+PROCEDURE myprocedure();
 #
-LABEL 13426, 7883, (*2987*);
-+3342.2145
--254.23
+LABEL 13426, 7883 (*, 2987*);
+(*+3342.2145
+-254.23*)
 
 BEGIN END;
