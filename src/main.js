@@ -7,6 +7,14 @@
         CALCULATION: 'CALCULATION'
     }
 
+    const LEXEM_TYPE = {
+        IDENTIFICATOR: 'IDENTIFICATOR',
+        KEYWORD: 'KEYWORD',
+        DELIMITER: 'DELIMITER',
+        CONSTANT: 'CONSTANT',
+        CALCULATION: 'CALCULATION'
+    }
+
     const KEYWORDS = {
         'PROGRAM': 401,
         'PROCEDURE': 402,
@@ -82,14 +90,14 @@
                         if (currentLexem && isDelimeterOrWhitespace(programChars[i + 1])) {
                             currentLexem += programChars[i];
                             if (IDENTIFICATORS[currentLexem]) {
-                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex);
+                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex, LEXEM_TYPE.IDENTIFICATOR);
                                 startKeywordOrIdentifireIndex = null;
                             } else if (KEYWORDS[currentLexem]) {
-                                addNewLexem(KEYWORDS[currentLexem], startKeywordOrIdentifireIndex);
+                                addNewLexem(KEYWORDS[currentLexem], startKeywordOrIdentifireIndex, LEXEM_TYPE.KEYWORD);
                                 startKeywordOrIdentifireIndex = null;
                             } else {
                                 IDENTIFICATORS[currentLexem] = getIdForNewTableItem(IDENTIFICATORS);
-                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex);
+                                addNewLexem(IDENTIFICATORS[currentLexem], startKeywordOrIdentifireIndex, LEXEM_TYPE.IDENTIFICATOR);
                                 startKeywordOrIdentifireIndex = null;
                             }
                         } else {
@@ -105,11 +113,11 @@
                         if (currentLexem && isDelimeterOrWhitespace(programChars[i + 1])) {
                             currentLexem += programChars[i];
                             if (CONSTANTS[currentLexem]) {
-                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
+                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex, LEXEM_TYPE.CONSTANT);
                                 startConstantIndex = null;
                             } else if (programChars[i + 1] !== '.') {
                                 CONSTANTS[currentLexem] = getIdForNewTableItem(CONSTANTS);
-                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex);
+                                addNewLexem(CONSTANTS[currentLexem], startConstantIndex, LEXEM_TYPE.CONSTANT);
                                 startConstantIndex = null;
                             }
                         } else {
@@ -139,7 +147,7 @@
                             commentStart = false;
                         } else {
                             addSymbolOnView(programChars[i]);
-                            addNewLexem(DELIMITERS[programChars[i]]);
+                            addNewLexem(DELIMITERS[programChars[i]], LEXEM_TYPE.DELIMITER);
                         }
                         currentLexemEndIndex++;
                         break;
@@ -155,6 +163,7 @@
                 }
             }
             showLexemsTable(lexems);
+            syntaxAnalyzer();
             showInformationTables();
             div.appendChild(pre);
         };
@@ -213,7 +222,7 @@
         for (let i = 0; i < array.length; i++) {
             const lexemsRow = document.createElement('th');
             const positionsRow = document.createElement('th');
-            lexemsRow.textContent = array[i].lexem;
+            lexemsRow.textContent = array[i].value;
             positionsRow.textContent = array[i].startIndex || array[i].startIndex === 0
                 ? `${array[i].line} : ${array[i].startIndex}-${array[i].endIndex}`
                 : `${array[i].line} : ${array[i].endIndex}`;
@@ -256,16 +265,62 @@
         });
     }
 
-    function addNewLexem(lexem, currentLexemStartIndex) {
+    function addNewLexem(lexem, currentLexemStartIndex, lexemType) {
         lexems.push({
-            lexem,
+            value: lexem,
             line: currentLine,
             startIndex: currentLexemStartIndex,
-            endIndex: currentLexemEndIndex
+            endIndex: currentLexemEndIndex,
+            type: lexemType
         });
     }
 
-    function syntaxAnalyzer() {
 
+    /*----- SYNTAX ANALYZER -----*/
+
+    let lexem;
+    let index = 0;
+
+    function syntaxAnalyzer() {
+        if (lexems.length === 0) {
+            throw new Error(`Program should not be empty`);
+        }
+
+        getNextLexem();
+        if (lexem.value !== KEYWORDS.PROCEDURE) {
+            console.log(`Program should start with ${KEYWORDS.PROCEDURE} keyword`);
+        } 
+        // else if (lexem.value !== KEYWORDS.PROGRAM) {
+        //     console.log(`Program should start with ${KEYWORDS.PROGRAM} keyword`);
+        // }
+
+        getNextLexem();
+        if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
+            console.log(`Program or procedure should have a name`);
+        }
+
+        getNextLexem();
+        if (lexem.value !== '(') {
+            console.log(`Procedure needed to open (`);
+        }
+
+        getNextLexem();
+        if (lexem.value !== ')') {
+            console.log(`Procedure needed ) symbol`);
+        }
+
+        getNextLexem();
+        if (lexem.value !== ';') {
+            console.log(`Wrong punctuation`);
+        }
+    }
+
+    function getNextLexem() {
+        lexem = lexems[index];
+        index++;
+
+        if (!lexem) {
+            console.log('Unexpected End of program');
+        }
     }
 })();
