@@ -166,6 +166,7 @@
             showInformationTables();
             div.appendChild(pre);
             syntaxAnalyzer();
+            console.log(generateThree(tree));
         };
         reader.readAsText(file);
     };
@@ -305,7 +306,7 @@
         };
         program.children.push(labelDeclarations);
         if (lexem.value === KEYWORDS.BEGIN) {
-            return checkBeginEndFlow();
+            return checkBeginEndFlow(program);
         } else if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
             throw new Error(`Identificator should be here: `);
         }
@@ -318,12 +319,10 @@
             children: []
         };
         labelDeclarations.children.push(labelsList);
-        checkConstantsOneByOne(labelsList);
+        checkConstantsOneByOne(labelsList, labelDeclarations);
 
         getNextLexem();
-        checkBeginEndFlow();
-
-        console.log(generateThree(tree));
+        checkBeginEndFlow(program);
     }
 
     function getNextLexem() {
@@ -385,8 +384,8 @@
         checkSemiColumnExistance(subtree);
     }
 
-    function checkProgramFlow(subtree) {
-        checkIdentificatorExistance(subtree);
+    function checkProgramFlow(identifier, subtree) {
+        checkIdentificatorExistance(identifier);
         checkSemiColumnExistance(subtree);
     }
 
@@ -412,25 +411,25 @@
         });
     }
 
-    function checkConstantsOneByOne(subtree) {
+    function checkConstantsOneByOne(labelsList, labelDeclarations) {
         getNextLexem();
         if (lexem.type !== LEXEM_TYPE.CONSTANT) {
             throw new Error('Constant should be here');
         }
-        subtree.children.push({
+        labelsList.children.push({
             name: `${getKeyByValue(CONSTANTS, lexem.value)} : ${lexem.value}`,
             children: []
         });
         
         getNextLexem();
         if (lexem.value === DELIMITERS[',']) {
-            subtree.children.push({
+            labelsList.children.push({
                 name: `, : ${lexem.value}`,
                 children: []
             });
-            checkConstantsOneByOne(subtree);
+            checkConstantsOneByOne(labelsList, labelDeclarations);
         } else if (lexem.value === DELIMITERS[';']) {
-            subtree.children.push({
+            labelDeclarations.children.push({
                 name: `; : ${lexem.value}`,
                 children: []
             });
@@ -440,20 +439,37 @@
         
     }
 
-    function checkBeginEndFlow() {
+    function checkBeginEndFlow(program) {
+        const block = {
+            name: '<block>',
+            children: []
+        };
+        program.children.push(block);
         if (lexem.value !== KEYWORDS.BEGIN) {
             throw new Error('\'BEGIN\' keyword should be here');
         }
+        block.children.push({
+            name: `${getKeyByValue(KEYWORDS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
 
         getNextLexem();
         if (lexem.value !== KEYWORDS.END) {
             throw new Error('\'END\' keyword should be here');
         }
+        block.children.push({
+            name: `${getKeyByValue(KEYWORDS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
 
         getNextLexem();
         if (lexem.value !== DELIMITERS[';']) {
             throw new Error('Semi column should be here');
         }
+        program.children.push({
+            name: `; : ${lexem.value}`,
+            children: []
+        });
     }
 
     function getKeyByValue(object, value) {

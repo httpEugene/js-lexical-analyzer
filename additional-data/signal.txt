@@ -1,6 +1,6 @@
 <signal-program> --> <program>
 <program> --> PROGRAM <procedure-identifier> ;
-    <block>. |
+    <block>; |
     PROCEDURE <procedure-identifier><parameters-list> ; <block> ;
 <block> --> <declarations> BEGIN <statements-list> END
 <declarations> --> <label-declarations>
