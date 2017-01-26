@@ -280,26 +280,50 @@
 
     let lexem;
     let index = 0;
+    const tree = {
+        name: '<signal-program>',
+        children: []
+    };
 
     function syntaxAnalyzer() {
         if (lexems.length === 0) {
             throw new Error(`Program should not be empty`);
         }
+        const program = {
+            name: '<program>',
+            children: []
+        };
+        tree.children.push(program);
 
         getNextLexem();
-        checkProcedureOrProgramFlow();
+        checkProcedureOrProgramFlow(program);
 
         getNextLexem();
+        const labelDeclarations = {
+            name: `<label-declarations>`,
+            children: []
+        };
+        program.children.push(labelDeclarations);
         if (lexem.value === KEYWORDS.BEGIN) {
             return checkBeginEndFlow();
         } else if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
-            throw new Error('Identificator should be here');
+            throw new Error(`Identificator should be here: `);
         }
-
-        checkConstantsOneByOne();
+        labelDeclarations.children.push({
+            name: `${getKeyByValue(IDENTIFICATORS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
+        const labelsList = {
+            name: `<labels-list>`,
+            children: []
+        };
+        labelDeclarations.children.push(labelsList);
+        checkConstantsOneByOne(labelsList);
 
         getNextLexem();
         checkBeginEndFlow();
+
+        console.log(generateThree(tree));
     }
 
     function getNextLexem() {
@@ -311,63 +335,109 @@
         }
     }
 
-    function checkProcedureOrProgramFlow() {
+    function checkProcedureOrProgramFlow(subtree) {
         if (lexem.value === KEYWORDS.PROCEDURE) {
-            checkProcedureFlow();
+            const identifier = getProgramOrProcedureIdentifireObject(subtree);
+            checkProcedureFlow(identifier, subtree);
         } else if (lexem.value === KEYWORDS.PROGRAM) {
-            checkProgramFlow();
+            const identifier = getProgramOrProcedureIdentifireObject(subtree);
+            checkProgramFlow(identifier, subtree);
         } else {
             throw new Error(`Program should start with ${KEYWORDS.PROCEDURE} or ${KEYWORDS.PROGRAM} keyword`);
         }
     }
 
-    function checkProcedureFlow() {
-        checkIdentificatorExistance();
+    function getProgramOrProcedureIdentifireObject(subtree) {
+        subtree.children.push({
+            name: `${getKeyByValue(KEYWORDS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
+        const procedureIdentifire = {
+            name: `<procedure-identifier>`,
+            children: []
+        };
+        subtree.children.push(procedureIdentifire);
+
+        return procedureIdentifire;
+    }
+
+    function checkProcedureFlow(identifier, subtree) {
+        checkIdentificatorExistance(identifier);
 
         getNextLexem();
         if (lexem.value !== DELIMITERS['(']) {
             throw new Error('There should be \'(\' after identificator');
         }
+        identifier.children.push({
+            name: `( : ${lexem.value}`,
+            children: []
+        });
 
         getNextLexem();
         if (lexem.value !== DELIMITERS[')']) {
             throw new Error('There should be closed method symbol \')\'');
         }
+        identifier.children.push({
+            name: `) : ${lexem.value}`,
+            children: []
+        });
 
-        checkSemiColumnExistance();
+        checkSemiColumnExistance(subtree);
     }
 
-    function checkProgramFlow() {
-        checkIdentificatorExistance();
-        checkSemiColumnExistance();
+    function checkProgramFlow(subtree) {
+        checkIdentificatorExistance(subtree);
+        checkSemiColumnExistance(subtree);
     }
 
-    function checkIdentificatorExistance() {
+    function checkIdentificatorExistance(subtree) {
         getNextLexem();
         if (lexem.type !== LEXEM_TYPE.IDENTIFICATOR) {
             throw new Error('Identificator should be here');
         }
+        subtree.children.push({
+            name: `${getKeyByValue(IDENTIFICATORS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
     }
 
-    function checkSemiColumnExistance() {
+    function checkSemiColumnExistance(subtree) {
         getNextLexem();
         if (lexem.value !== DELIMITERS[';']) {
             throw new Error('There should be \';\'');
         }
+        subtree.children.push({
+            name: `; : ${lexem.value}`,
+            children: []
+        });
     }
 
-    function checkConstantsOneByOne() {
+    function checkConstantsOneByOne(subtree) {
         getNextLexem();
         if (lexem.type !== LEXEM_TYPE.CONSTANT) {
             throw new Error('Constant should be here');
         }
+        subtree.children.push({
+            name: `${getKeyByValue(CONSTANTS, lexem.value)} : ${lexem.value}`,
+            children: []
+        });
         
         getNextLexem();
         if (lexem.value === DELIMITERS[',']) {
-            checkConstantsOneByOne();
-        } else if (lexem.value !== DELIMITERS[';']) {
+            subtree.children.push({
+                name: `, : ${lexem.value}`,
+                children: []
+            });
+            checkConstantsOneByOne(subtree);
+        } else if (lexem.value === DELIMITERS[';']) {
+            subtree.children.push({
+                name: `; : ${lexem.value}`,
+                children: []
+            });
+        } else {
             throw new Error('Semi column or comma should be here');
         }
+        
     }
 
     function checkBeginEndFlow() {
@@ -385,4 +455,44 @@
             throw new Error('Semi column should be here');
         }
     }
+
+    function getKeyByValue(object, value) {
+        return Object.keys(object).find(key => object[key] === value);
+    }
+
+    function generateThree(obj, prefix, opts) {
+        if (prefix === undefined) prefix = '';
+        if (!opts) opts = {};
+        var chr = function (s) {
+            var chars = {
+                '|' : '|',
+                '└' : '`',
+                '├' : '+',
+                '-' : '-',
+                '┬' : '-'
+            };
+            return opts.unicode === false ? chars[s] : s;
+        };
+        
+        if (typeof obj === 'string') obj = { name : obj };
+        
+        var children = obj.children || [];
+        var lines = (obj.name || '').split('\n');
+        var splitter = '\n' + prefix + (children.length ? chr('|') : ' ') + ' ';
+        
+        return prefix
+            + lines.join(splitter) + '\n'
+            + children.map(function (node, ix) {
+                var last = ix === children.length - 1;
+                var more = node.children && node.children.length;
+                var prefix_ = prefix + (last ? ' ' : chr('|')) + ' ';
+                
+                return prefix
+                    + (last ? chr('└') : chr('├')) + chr('-')
+                    + (more ? chr('┬') : chr('-')) + ' '
+                    + generateThree(node, prefix_, opts).slice(prefix.length + 2)
+                ;
+            }).join('')
+        ;
+    };
 })();
